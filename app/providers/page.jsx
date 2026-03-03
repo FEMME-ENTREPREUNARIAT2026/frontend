@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -7,11 +7,13 @@ import ProviderCard from '@/components/ui/ProviderCard'
 import { PROVIDERS, CATEGORIES } from '@/data/mockData'
 import { IMAGES } from '@/data/mediaUtils'
 import { SlidersHorizontal, X, Search } from 'lucide-react'
+import { getBoutiques, normalizeBoutiqueForCard } from '@/lib/api'
+import FadeIn from '@/components/ui/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerChildren'
 
 const CITIES = ['Toutes les villes', 'Yaounde', 'Douala', 'Bafoussam', 'Garoua']
 
-// 70 prestataires avec images variees et images fallback
-const ALL_PROVIDERS = [
+const MOCK_PROVIDERS = [
   ...PROVIDERS,
   ...Array.from({ length: 60 }, (_, i) => {
     const base = PROVIDERS[i % PROVIDERS.length]
@@ -30,14 +32,25 @@ function ProvidersContent() {
   const searchParams = useSearchParams()
   const urlCategory = searchParams.get('category') || 'all'
 
+  const [allProviders, setAllProviders] = useState(MOCK_PROVIDERS)
   const [category, setCategory] = useState(urlCategory)
   const [city, setCity] = useState('Toutes les villes')
   const [minRating, setMinRating] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  useEffect(() => {
+    getBoutiques()
+      .then(data => {
+        if (data && data.length > 0) {
+          setAllProviders(data.map(normalizeBoutiqueForCard))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const filtered = useMemo(() => {
-    return ALL_PROVIDERS.filter(p => {
+    return allProviders.filter(p => {
       if (category !== 'all' && p.category !== category) return false
       if (city !== 'Toutes les villes' && p.city !== city) return false
       if (p.rating < minRating) return false
@@ -50,7 +63,7 @@ function ProvidersContent() {
       }
       return true
     }).sort((a, b) => b.rating - a.rating)
-  }, [category, city, minRating, searchTerm])
+  }, [allProviders, category, city, minRating, searchTerm])
 
   return (
     <>
@@ -59,9 +72,11 @@ function ProvidersContent() {
         {/* Hero */}
         <div className="bg-gradient-to-br from-petrol to-petrol-dark text-white py-14">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Notre reseau</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-2">Nos Prestataires</h1>
-            <p className="text-white/70">{ALL_PROVIDERS.length} professionnelles de confiance au Cameroun</p>
+            <FadeIn direction="up">
+              <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Notre reseau</p>
+              <h1 className="font-display text-4xl md:text-5xl font-bold mb-2">Nos Prestataires</h1>
+              <p className="text-white/70">{allProviders.length} professionnelles de confiance au Cameroun</p>
+            </FadeIn>
             {/* Barre de recherche */}
             <div className="relative mt-6 max-w-lg">
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50" />
@@ -153,11 +168,13 @@ function ProvidersContent() {
 
           {/* Grille prestataires */}
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filtered.map(provider => (
-                <ProviderCard key={provider.id} provider={provider} />
+                <StaggerItem key={provider.id}>
+                  <ProviderCard provider={provider} />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           ) : (
             <div className="text-center py-24">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Play, Star, Heart, ArrowRight } from 'lucide-react'
 import { SERVICES } from '@/data/mockData'
+import FadeIn from '@/components/ui/FadeIn'
 
 // Les 8 images et 4 videos disponibles dans /images
 const ALL_IMAGES = [
@@ -74,7 +75,7 @@ function ServiceCard({ service, positionInCategory }) {
   return (
     <Link
       href={`/services/${service.id}`}
-      className="group flex-shrink-0 w-48 sm:w-52 block rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      className="group flex-shrink-0 w-[44vw] sm:w-44 md:w-48 lg:w-52 block rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
@@ -148,6 +149,7 @@ function CategoryCarousel({ category }) {
   const scrollRef = useRef(null)
   const [canLeft, setCanLeft] = useState(false)
   const [canRight, setCanRight] = useState(true)
+  const [isHovered, setIsHovered] = useState(false)
 
   const items = SERVICES
     .filter(s => s.category === category.id)
@@ -163,47 +165,72 @@ function CategoryCarousel({ category }) {
     setCanRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 5)
   }
 
+  // Auto-scroll: saute 85% de la largeur visible → s'adapte à tous les écrans
+  useEffect(() => {
+    if (isHovered) return
+    const interval = setInterval(() => {
+      const el = scrollRef.current
+      if (!el) return
+      const JUMP = el.clientWidth * 0.85
+      const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 8
+      if (atEnd) {
+        el.scrollLeft = 0
+      } else {
+        el.scrollBy({ left: JUMP, behavior: 'smooth' })
+      }
+      setTimeout(checkScroll, 500)
+    }, 2200)
+    return () => clearInterval(interval)
+  }, [isHovered])
+
   function scrollLeft() {
-    scrollRef.current?.scrollBy({ left: -900, behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollBy({ left: -(el.clientWidth * 0.85), behavior: 'smooth' })
     setTimeout(checkScroll, 450)
   }
   function scrollRight() {
-    scrollRef.current?.scrollBy({ left: 900, behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollBy({ left: el.clientWidth * 0.85, behavior: 'smooth' })
     setTimeout(checkScroll, 450)
   }
 
   return (
-    <div className="mb-12">
+    <div
+      className="mb-12"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* En-tete : trait + titre + fleches + voir tout */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          {/* Trait vertical de couleur */}
-          <div className="w-1 h-7 rounded-full" style={{ backgroundColor: category.accent }} />
-          <h3 className="font-display text-xl font-bold" style={{ color: category.accent }}>
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="w-1 h-6 md:h-7 rounded-full" style={{ backgroundColor: category.accent }} />
+          <h3 className="font-display text-base md:text-xl font-bold" style={{ color: category.accent }}>
             {category.label}
           </h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2">
           <button
             onClick={scrollLeft}
             disabled={!canLeft}
-            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-700 disabled:opacity-25 transition-all"
+            className="w-7 h-7 md:w-8 md:h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-700 disabled:opacity-25 transition-all"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} />
           </button>
           <button
             onClick={scrollRight}
             disabled={!canRight}
-            className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-700 disabled:opacity-25 transition-all"
+            className="w-7 h-7 md:w-8 md:h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-700 disabled:opacity-25 transition-all"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={14} />
           </button>
           <Link
             href={`/services?category=${category.id}`}
             className="hidden sm:flex items-center gap-1 text-xs font-medium text-gray-400 hover:text-fuchsia transition-colors ml-1"
           >
-            Voir tout <ArrowRight size={13} />
+            Voir tout <ArrowRight size={12} />
           </Link>
         </div>
       </div>
@@ -231,26 +258,24 @@ function CategoryCarousel({ category }) {
 // -----------------------------------------------------------
 export default function ServicesSection() {
   return (
-    <section className="py-20 bg-white">
+    <section className="py-12 md:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* En-tete global */}
-        <div className="flex items-end justify-between mb-14">
+        <FadeIn direction="up" className="flex flex-wrap items-start justify-between gap-4 mb-10 md:mb-14">
           <div>
-            <p className="text-fuchsia text-xs font-bold tracking-widest uppercase mb-2">
-              Nos prestations
-            </p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-petrol">
-              Services par Categorie
+            <span className="section-label">Nos prestations</span>
+            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-petrol leading-tight">
+              Services par Catégorie
             </h2>
-            <p className="text-gray-400 mt-1 text-lg">
-              Les 12 meilleures prestations de chaque categorie
+            <p className="text-gray-400 mt-2 text-base md:text-lg">
+              Les meilleures prestations de chaque catégorie
             </p>
           </div>
-          <Link href="/services" className="hidden md:flex items-center gap-2 btn-outline">
+          <Link href="/services" className="self-end text-xs md:text-sm font-semibold text-fuchsia border border-fuchsia px-3 py-1.5 md:px-5 md:py-2 rounded-full hover:bg-fuchsia hover:text-white transition-all">
             Toutes les prestations
           </Link>
-        </div>
+        </FadeIn>
 
         {/* Un carrousel par categorie */}
         {HOME_CATEGORIES.map(cat => (

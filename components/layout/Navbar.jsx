@@ -52,14 +52,16 @@ export default function Navbar({ transparent = false }) {
   }
 
   const isTransparent = transparent && !scrolled && !mobileOpen
-  const profileHref = user?.type === 'prestataire' ? '/profile/provider' : '/profile/client'
+  const profileHref = '/profile/provider'
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isTransparent ? 'bg-transparent' : 'bg-white shadow-sm'
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      isTransparent
+        ? 'bg-transparent'
+        : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-soft'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between" style={{ height: '4.5rem' }}>
 
           {/* Logo */}
           <Logo dark={!isTransparent} />
@@ -68,10 +70,13 @@ export default function Navbar({ transparent = false }) {
           <div className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map(link => (
               <Link key={link.href} href={link.href}
-                className={`font-medium text-sm transition-colors hover:text-fuchsia ${
-                  isTransparent ? 'text-white' : 'text-gray-700'
+                className={`relative font-semibold text-sm transition-colors group ${
+                  isTransparent ? 'text-white hover:text-gold' : 'text-gray-600 hover:text-fuchsia'
                 }`}>
                 {link.label}
+                <span className={`absolute -bottom-0.5 left-0 h-0.5 rounded-full transition-all duration-300 w-0 group-hover:w-full ${
+                  isTransparent ? 'bg-gold' : 'bg-fuchsia'
+                }`} />
               </Link>
             ))}
           </div>
@@ -103,7 +108,7 @@ export default function Navbar({ transparent = false }) {
 
                 {/* Dropdown menu */}
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-premium border border-fuchsia/8 py-2 z-50 animate-fade-in">
                     <div className="px-4 py-2 border-b border-gray-50">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         {user.type === 'prestataire' ? 'Prestataire' : 'Client'}
@@ -120,16 +125,6 @@ export default function Navbar({ transparent = false }) {
                       <User size={15} />
                       Mon profil
                     </Link>
-                    {user.type === 'prestataire' && (
-                      <Link
-                        href="/profile/client"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-fuchsia transition-colors"
-                      >
-                        <User size={15} />
-                        Espace client
-                      </Link>
-                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"

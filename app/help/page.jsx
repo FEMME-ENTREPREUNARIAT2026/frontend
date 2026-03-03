@@ -1,5 +1,7 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import FadeIn from '@/components/ui/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerChildren'
 
 const FAQS = [
   {
@@ -34,22 +36,24 @@ export default function HelpPage() {
       <Navbar />
       <main className="min-h-screen bg-gray-50 pt-16">
         <div className="bg-gradient-to-br from-lavender to-petrol text-white py-14">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <FadeIn direction="up" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Assistance</p>
             <h1 className="font-display text-4xl md:text-5xl font-bold">Centre d'aide</h1>
             <p className="text-white/80 mt-3 text-lg">Trouvez rapidement une reponse a vos questions.</p>
-          </div>
+          </FadeIn>
         </div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="space-y-4">
+          <StaggerContainer className="space-y-4">
             {FAQS.map((faq, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="font-display font-bold text-petrol mb-2">{faq.q}</h3>
-                <p className="text-gray-600 leading-relaxed text-sm">{faq.a}</p>
-              </div>
+              <StaggerItem key={i}>
+                <div className="bg-white rounded-2xl shadow-sm p-6">
+                  <h3 className="font-display font-bold text-petrol mb-2">{faq.q}</h3>
+                  <p className="text-gray-600 leading-relaxed text-sm">{faq.a}</p>
+                </div>
+              </StaggerItem>
             ))}
-          </div>
-          <div className="mt-12 bg-fuchsia/5 rounded-3xl p-8 border border-fuchsia/10 text-center">
+          </StaggerContainer>
+          <FadeIn direction="up" className="mt-12 bg-fuchsia/5 rounded-3xl p-8 border border-fuchsia/10 text-center">
             <h2 className="font-display text-xl font-bold text-petrol mb-2">Vous n'avez pas trouve la reponse ?</h2>
             <p className="text-gray-500 text-sm mb-4">Notre equipe repond dans les 24h.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -63,7 +67,7 @@ export default function HelpPage() {
                 💬 Contacter via WhatsApp
               </a>
             </div>
-          </div>
+          </FadeIn>
         </div>
       </main>
       <Footer />

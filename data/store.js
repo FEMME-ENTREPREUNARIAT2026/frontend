@@ -146,45 +146,49 @@ export function resetStore() {
 }
 
 // ─────────────────────────────────────────────────────────
-// AUTHENTIFICATION
+// AUTHENTIFICATION — connectée au backend via API
 // ─────────────────────────────────────────────────────────
-export function login(email, motDePasse) {
-  const users = lsGet('fh_users') || INITIAL_USERS
-  const user = users.find(
-    u => u.email.toLowerCase() === email.toLowerCase() &&
-         u.motDePasse === motDePasse
-  )
-  if (!user) return { success: false, error: 'Email ou mot de passe incorrect' }
-  const session = { ...user }
-  delete session.motDePasse
-  lsSet('fh_session', session)
-  emit('fh_auth_change', session)
-  return { success: true, user: session }
+import { apiLogin, apiRegister, normalizeUser, setToken, removeToken, CATEGORIE_SLUG_MAP } from '@/lib/api'
+
+export async function login(email, motDePasse) {
+  try {
+    const data = await apiLogin(email, motDePasse)
+    const user = normalizeUser(data.user, data.token)
+    setToken(data.token)
+    lsSet('fh_session', user)
+    emit('fh_auth_change', user)
+    return { success: true, user }
+  } catch (err) {
+    return { success: false, error: err.message || 'Email ou mot de passe incorrect' }
+  }
 }
 
-export function register(data) {
-  // S'assure que les utilisateurs de base existent
-  let users = lsGet('fh_users')
-  if (!users) { users = INITIAL_USERS; lsSet('fh_users', users) }
-  
-  if (users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-    return { success: false, error: 'Cet email est déjà utilisé' }
+export async function register(data) {
+  const nom = `${data.prenom || ''} ${data.nom || ''}`.trim()
+  const categorieSlug = data.type === 'prestataire'
+    ? (CATEGORIE_SLUG_MAP[data.categorie] || 'autre')
+    : undefined
+  try {
+    const res = await apiRegister({
+      email: data.email,
+      password: data.motDePasse,
+      nom,
+      role: data.type === 'prestataire' ? 'PRESTATAIRE' : 'CLIENT',
+      telephone: data.telephone || undefined,
+      categorieSlug,
+    })
+    const user = normalizeUser(res.user, res.token)
+    setToken(res.token)
+    lsSet('fh_session', user)
+    emit('fh_auth_change', user)
+    return { success: true, user }
+  } catch (err) {
+    return { success: false, error: err.message || 'Erreur lors de la création du compte' }
   }
-  const newUser = {
-    id: 'user-' + Date.now(),
-    ...data,
-    createdAt: Date.now(),
-  }
-  users.push(newUser)
-  lsSet('fh_users', users)
-  const session = { ...newUser }
-  delete session.motDePasse
-  lsSet('fh_session', session)
-  emit('fh_auth_change', session)
-  return { success: true, user: session }
 }
 
 export function logout() {
+  removeToken()
   lsSet('fh_session', null)
   emit('fh_auth_change', null)
 }
@@ -198,10 +202,6 @@ export function updateProfile(updates) {
   if (!session) return null
   const newSession = { ...session, ...updates }
   lsSet('fh_session', newSession)
-  const users = lsGet('fh_users', [])
-  const idx = users.findIndex(u => u.id === session.id)
-  if (idx >= 0) users[idx] = { ...users[idx], ...updates }
-  lsSet('fh_users', users)
   emit('fh_auth_change', newSession)
   return newSession
 }

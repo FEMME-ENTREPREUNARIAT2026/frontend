@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
+import { motion } from 'framer-motion'
 import Logo from '@/components/layout/Logo'
 import { login, initStore, resetStore } from '@/data/store'
 
@@ -21,20 +22,18 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
     initStore()
-    setTimeout(() => {
-      const result = login(email.trim().toLowerCase(), password)
-      setLoading(false)
-      if (result.success) {
-        router.push(result.user.type === 'prestataire' ? '/profile/provider' : '/profile/client')
-      } else {
-        setError(result.error)
-      }
-    }, 400)
+    const result = await login(email.trim().toLowerCase(), password)
+    setLoading(false)
+    if (result.success) {
+      router.push(result.user.type === 'prestataire' ? '/profile/provider' : '/profile/client')
+    } else {
+      setError(result.error)
+    }
   }
 
   function fill(acc) {
@@ -51,7 +50,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Panneau gauche décoratif */}
-      <div className="hidden lg:flex lg:w-1/2 bg-petrol items-center justify-center relative overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="hidden lg:flex lg:w-1/2 bg-petrol items-center justify-center relative overflow-hidden"
+      >
         <div className="absolute inset-0 opacity-20"
           style={{ background: 'radial-gradient(circle at 30% 50%, #E91E63 0%, transparent 60%)' }} />
         <div className="text-center text-white px-12 relative z-10">
@@ -60,10 +64,15 @@ export default function LoginPage() {
             La plateforme qui connecte les femmes entrepreneures camerounaises avec leurs clients.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Panneau formulaire */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50">
+      <motion.div
+        initial={{ opacity: 0, x: 40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="flex-1 flex items-center justify-center px-6 py-12 bg-gray-50"
+      >
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 flex justify-center">
             <Logo dark />
@@ -105,7 +114,12 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
+                <Link href="/auth/forgot-password" className="text-xs text-fuchsia hover:underline">
+                  Mot de passe oublié ?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -154,7 +168,7 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

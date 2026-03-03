@@ -1,5 +1,6 @@
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import FadeIn from '@/components/ui/FadeIn'
 
 export default function TermsPage() {
   return (
@@ -7,13 +8,13 @@ export default function TermsPage() {
       <Navbar />
       <main className="min-h-screen bg-gray-50 pt-16">
         <div className="bg-petrol text-white py-14">
-          <div className="max-w-4xl mx-auto px-4">
+          <FadeIn direction="up" className="max-w-4xl mx-auto px-4">
             <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Legal</p>
             <h1 className="font-display text-4xl font-bold">Conditions d'utilisation</h1>
-          </div>
+          </FadeIn>
         </div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="bg-white rounded-3xl shadow-sm p-8 md:p-12 space-y-8 text-gray-600 leading-relaxed text-sm">
+          <FadeIn direction="up" delay={0.1} className="bg-white rounded-3xl shadow-sm p-8 md:p-12 space-y-8 text-gray-600 leading-relaxed text-sm">
             <section>
               <h2 className="font-display text-xl font-bold text-petrol mb-3">1. Acceptation des conditions</h2>
               <p>En utilisant Fempreneur Hub, vous acceptez les presentes conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser la plateforme.</p>
@@ -39,7 +40,7 @@ export default function TermsPage() {
               <p>Pour toute question relative aux conditions d'utilisation : <a href="mailto:fempreneurHUB@gmail.com" className="text-fuchsia hover:underline">fempreneurHUB@gmail.com</a></p>
             </section>
             <p className="text-xs text-gray-400">Derniere mise a jour : {new Date().getFullYear()}</p>
-          </div>
+          </FadeIn>
         </div>
       </main>
       <Footer />

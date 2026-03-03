@@ -13,6 +13,7 @@ import {
   MapPin, Star, Package, Users, Share2, Heart, ChevronLeft, ChevronRight,
   X, ZoomIn, Phone, Send, Check
 } from 'lucide-react'
+import FadeIn from '@/components/ui/FadeIn'
 import {
   getCurrentUser, getAvis, addAvis, getNoteMoyenne,
   getWhatsAppUrl, WHATSAPP_NUMBER, initStore
@@ -192,14 +193,30 @@ export default function ProviderShopPage() {
   const [lightbox, setLightbox] = useState(null)
   const [avis, setAvis] = useState([])
   const [refreshAvis, setRefreshAvis] = useState(0)
+  const [showRdv, setShowRdv] = useState(false)
+  const [rdvDate, setRdvDate] = useState('')
+  const [rdvHeure, setRdvHeure] = useState('')
+  const [rdvService, setRdvService] = useState('')
+  const [rdvNote, setRdvNote] = useState('')
 
   const whatsappNum = provider.whatsapp || WHATSAPP_NUMBER
   const user = getCurrentUser()
   const clientName = user ? `${user.prenom} ${user.nom}` : 'Client(e)'
 
-  // Message "Prendre rendez-vous" : direct, sans formulaire
-  const rdvMessage = `Bonjour ${provider.name},\n\nHello, je voudrais que vous me réalisiez un service.\n\nClient : ${clientName}`
-  const rdvUrl = getWhatsAppUrl(whatsappNum, rdvMessage)
+  function buildRdvUrl() {
+    const dateStr = rdvDate ? new Date(rdvDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
+    const lines = [
+      `Bonjour ${provider.name},`,
+      ``,
+      `Je souhaite prendre rendez-vous.`,
+      rdvDate && rdvHeure ? `📅 Date : ${dateStr} à ${rdvHeure}` : rdvDate ? `📅 Date : ${dateStr}` : '',
+      rdvService ? `💼 Service souhaité : ${rdvService}` : '',
+      rdvNote ? `📝 Note : ${rdvNote}` : '',
+      ``,
+      `Client(e) : ${clientName}`,
+    ].filter(l => l !== null && l !== undefined && !(l === '' && false))
+    return getWhatsAppUrl(whatsappNum, lines.join('\n'))
+  }
 
   useEffect(() => {
     initStore()
@@ -340,7 +357,7 @@ export default function ProviderShopPage() {
         {/* Espace pour compenser le débordement de la photo de profil */}
         <div className="h-14 bg-gray-50"/>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeIn direction="up" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-16">
 
             {/* ---- Colonne principale ---- */}
@@ -367,11 +384,11 @@ export default function ProviderShopPage() {
                 <p className="text-gray-600 leading-relaxed">{provider.description}</p>
 
                 <div className="mt-5 pt-5 border-t border-gray-100 flex flex-col sm:flex-row gap-3">
-                  <a href={rdvUrl} target="_blank" rel="noopener noreferrer"
+                  <button onClick={() => setShowRdv(true)}
                     className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 font-medium px-4 py-2.5 rounded-full text-sm transition-all">
                     <WA size={16}/> WhatsApp : {whatsappNum}
-                  </a>
-                  <a href={`tel:${whatsappNum}`}
+                  </button>
+                  <a href={`tel:${provider.telephone || whatsappNum}`}
                     className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-600 font-medium px-4 py-2.5 rounded-full text-sm transition-all">
                     <Phone size={15}/> Appeler
                   </a>
@@ -471,18 +488,15 @@ export default function ProviderShopPage() {
                   </div>
                 </div>
 
-                {/* ✅ BOUTON "PRENDRE RENDEZ-VOUS" → direct WhatsApp, sans formulaire */}
-                <a
-                  href={rdvUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowRdv(true)}
                   className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-full text-sm transition-all shadow-md shadow-green-500/20 mb-3"
                 >
                   <WA size={18}/>
                   Prendre rendez-vous
-                </a>
+                </button>
 
-                <a href={`tel:${whatsappNum}`}
+                <a href={`tel:${provider.telephone || whatsappNum}`}
                   className="flex items-center justify-center gap-2 w-full border-2 border-gray-200 hover:border-fuchsia hover:text-fuchsia text-gray-600 font-medium py-3 rounded-full text-sm transition-all mb-5">
                   <Phone size={15}/> Appeler
                 </a>
@@ -502,9 +516,83 @@ export default function ProviderShopPage() {
               </div>
             </div>
           </div>
-        </div>
+        </FadeIn>
 
         {lightbox && <Lightbox images={lightbox.images} startIdx={lightbox.startIdx} onClose={closeLightbox}/>}
+
+        {/* Modal rendez-vous */}
+        {showRdv && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowRdv(false)}>
+            <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-100">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-petrol">Prendre rendez-vous</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">avec {provider.name}</p>
+                </div>
+                <button onClick={() => setShowRdv(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <X size={15}/>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Date souhaitée</label>
+                    <input
+                      type="date"
+                      value={rdvDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={e => setRdvDate(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Heure souhaitée</label>
+                    <input
+                      type="time"
+                      value={rdvHeure}
+                      onChange={e => setRdvHeure(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Service souhaité</label>
+                  <input
+                    type="text"
+                    value={rdvService}
+                    onChange={e => setRdvService(e.target.value)}
+                    placeholder="Ex : Coiffure mariage, Tresses box braids..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Message additionnel <span className="text-gray-400 font-normal">(optionnel)</span></label>
+                  <textarea
+                    value={rdvNote}
+                    onChange={e => setRdvNote(e.target.value)}
+                    rows={2}
+                    placeholder="Précisions supplémentaires..."
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+                  />
+                </div>
+
+                <a
+                  href={buildRdvUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setShowRdv(false)}
+                  className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-full text-sm transition-all"
+                >
+                  <WA size={18}/>
+                  Envoyer sur WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
       <Footer/>
     </>

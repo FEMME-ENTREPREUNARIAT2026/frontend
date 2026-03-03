@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -7,21 +7,20 @@ import ServiceCard from '@/components/ui/ServiceCard'
 import { SERVICES, CATEGORIES } from '@/data/mockData'
 import { enrichServices } from '@/data/mediaUtils'
 import { SlidersHorizontal, X, Search } from 'lucide-react'
+import { getPrestations, normalizePrestationForCard } from '@/lib/api'
+import FadeIn from '@/components/ui/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerChildren'
 
 const CITIES = ['Toutes les villes', 'Yaounde', 'Douala', 'Bafoussam', 'Garoua', 'Bertoua']
-
-// Toutes les prestations avec images et videos correctement assignees
-// enrichServices varie les images et place des videos toutes les 10 cartes
-const ALL_SERVICES = enrichServices(SERVICES)
 
 // -------------------------------------------------------
 // Composant principal (doit etre dans Suspense pour useSearchParams)
 // -------------------------------------------------------
 function ServicesContent() {
   const searchParams = useSearchParams()
-  // Lire la categorie depuis l'URL si on vient de l'accueil (?category=coiffure)
   const urlCategory = searchParams.get('category') || 'all'
 
+  const [allServices, setAllServices] = useState(enrichServices(SERVICES))
   const [category, setCategory] = useState(urlCategory)
   const [city, setCity] = useState('Toutes les villes')
   const [maxPrice, setMaxPrice] = useState(1000000)
@@ -29,9 +28,19 @@ function ServicesContent() {
   const [showFilters, setShowFilters] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  useEffect(() => {
+    getPrestations()
+      .then(data => {
+        if (data && data.length > 0) {
+          setAllServices(enrichServices(data.map(normalizePrestationForCard)))
+        }
+      })
+      .catch(() => {}) // fallback sur les données mock
+  }, [])
+
   // ---- Filtrage : recalcule a chaque changement de filtre ----
   const filtered = useMemo(() => {
-    return ALL_SERVICES.filter(s => {
+    return allServices.filter(s => {
       if (category !== 'all' && s.category !== category) return false
       if (city !== 'Toutes les villes' && s.city !== city) return false
       if (s.price > maxPrice) return false
@@ -45,7 +54,7 @@ function ServicesContent() {
       }
       return true
     }).sort((a, b) => b.views - a.views)
-  }, [category, city, maxPrice, minRating, searchTerm])
+  }, [allServices, category, city, maxPrice, minRating, searchTerm])
 
   function resetFilters() {
     setCategory('all')
@@ -63,11 +72,13 @@ function ServicesContent() {
         {/* Hero */}
         <div className="bg-petrol text-white py-14">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Explorer</p>
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-2">
-              Toutes les Prestations
-            </h1>
-            <p className="text-white/70">{ALL_SERVICES.length} prestations disponibles au Cameroun</p>
+            <FadeIn direction="up">
+              <p className="text-gold text-xs font-bold tracking-widest uppercase mb-2">Explorer</p>
+              <h1 className="font-display text-4xl md:text-5xl font-bold mb-2">
+                Toutes les Prestations
+              </h1>
+              <p className="text-white/70">{allServices.length} prestations disponibles au Cameroun</p>
+            </FadeIn>
 
             {/* Barre de recherche */}
             <div className="relative mt-6 max-w-lg">
@@ -198,11 +209,13 @@ function ServicesContent() {
 
           {/* Grille des prestations */}
           {filtered.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filtered.map(service => (
-                <ServiceCard key={service.id} service={service} />
+                <StaggerItem key={service.id}>
+                  <ServiceCard service={service} />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           ) : (
             <div className="text-center py-24">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

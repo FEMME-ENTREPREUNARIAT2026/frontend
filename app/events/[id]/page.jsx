@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer'
 import { EVENTS } from '@/data/mockData'
 import { IMAGES } from '@/data/mediaUtils'
 import { Calendar, MapPin, Users, Clock, User, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import FadeIn from '@/components/ui/FadeIn'
 import { reserver, getPlacesRestantes, getCurrentUser, getWhatsAppUrl, WHATSAPP_NUMBER, initStore } from '@/data/store'
 
 // Icone WhatsApp
@@ -28,6 +29,8 @@ export default function EventDetailPage() {
   const [email, setEmail] = useState('')
   const [telephone, setTelephone] = useState('')
   const [nbPlaces, setNbPlaces] = useState(1)
+  const [description, setDescription] = useState('')
+  const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
 
   const date = new Date(event.date)
@@ -50,15 +53,22 @@ export default function EventDetailPage() {
 
   const participation = Math.min(100, Math.round(((event.maxParticipants - placesLeft) / event.maxParticipants) * 100))
 
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setImagePreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
     setTimeout(() => {
-      reserver(event.id, { nom, email, telephone, nbPlaces })
+      reserver(event.id, { nom, email, telephone, nbPlaces, description, image: imagePreview })
       setPlacesLeft(prev => Math.max(0, prev - nbPlaces))
       setLoading(false)
       setSubmitted(true)
-      // Apres confirmation, proposer WhatsApp
     }, 600)
   }
 
@@ -93,7 +103,7 @@ export default function EventDetailPage() {
           </Link>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <FadeIn direction="up" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             {/* Contenu principal */}
@@ -208,7 +218,7 @@ export default function EventDetailPage() {
               </div>
             </div>
           </div>
-        </div>
+        </FadeIn>
 
         {/* Modal de réservation */}
         {showForm && (
@@ -265,6 +275,32 @@ export default function EventDetailPage() {
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia">
                       {Array.from({length: Math.min(5, placesLeft)}, (_,i) => i+1).map(n => <option key={n} value={n}>{n} place{n>1?'s':''}</option>)}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Message / description <span className="text-gray-400 font-normal">(optionnel)</span></label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)}
+                      rows={3} placeholder="Informations supplémentaires, demandes spéciales..."
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia resize-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Joindre une image <span className="text-gray-400 font-normal">(optionnel)</span></label>
+                    <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-fuchsia hover:bg-fuchsia/5 transition-all overflow-hidden relative">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="apercu" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-center text-gray-400 text-sm">
+                          <div className="text-2xl mb-1">📎</div>
+                          <span>Cliquez pour ajouter une image</span>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                    </label>
+                    {imagePreview && (
+                      <button type="button" onClick={() => setImagePreview(null)}
+                        className="text-xs text-red-400 hover:text-red-600 mt-1">
+                        Supprimer l'image
+                      </button>
+                    )}
                   </div>
                   <button type="submit" disabled={loading}
                     className="w-full btn-primary mt-2 flex items-center justify-center gap-2 disabled:opacity-50">

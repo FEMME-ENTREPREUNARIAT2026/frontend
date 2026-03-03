@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import {
-  Bell, Package, ShoppingBag, BarChart3, Settings, Plus, LogOut,
-  Edit3, Upload, Check, X, Camera, Eye, Heart, Trash2, MessageCircle
+  Bell, Package, ShoppingBag, Settings, Plus, LogOut,
+  Edit3, Upload, Check, X, Camera, Eye, Heart, Trash2, Calendar, Star, MapPin
 } from 'lucide-react'
-import { SERVICES, CATEGORIES } from '@/data/mockData'
+import Link from 'next/link'
+import { SERVICES, CATEGORIES, PROVIDERS } from '@/data/mockData'
 import { IMAGES } from '@/data/mediaUtils'
-import { getCurrentUser, logout, updateProfile, getReservations, initStore, getWhatsAppUrl, WHATSAPP_NUMBER } from '@/data/store'
+import { getCurrentUser, logout, updateProfile, getReservations, getFavoris, initStore, getWhatsAppUrl, WHATSAPP_NUMBER } from '@/data/store'
+import FadeIn from '@/components/ui/FadeIn'
 
 function WA({ size = 16 }) {
   return (
@@ -26,6 +27,7 @@ const STATUS_LABELS = { pending:'En attente', confirme:'Confirmee', termine:'Ter
 export default function ProviderProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState(null)
+  const [isAdminMode, setIsAdminMode] = useState(false)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [editMode, setEditMode] = useState(false)
   const [editDesc, setEditDesc] = useState('')
@@ -36,24 +38,39 @@ export default function ProviderProfilePage() {
   const [newService, setNewService] = useState({ title:'', description:'', prix:'', duree:'', categorie:'' })
   const [myServices, setMyServices] = useState([])
   const [reservations, setReservations] = useState([])
+  const [favoris, setFavoris] = useState([])
+  const [coverImage, setCoverImage] = useState(null)
+  const [myEvents, setMyEvents] = useState([])
   const fileRef = useRef(null)
   const portfolioFileRef = useRef(null)
+  const coverRef = useRef(null)
 
   useEffect(() => {
     initStore()
     const u = getCurrentUser()
     if (!u) { router.push('/auth/login'); return }
-    if (u.type !== 'prestataire') { router.push('/profile/client'); return }
     setUser(u)
+    if (localStorage.getItem('fh_admin_impersonate') === 'true') setIsAdminMode(true)
     setEditDesc(u.description || '')
     setEditPrenom(u.prenom || '')
-    // Charger mes services depuis le localStorage
-    const stored = localStorage.getItem('fh_my_services_' + u.id)
-    if (stored) setMyServices(JSON.parse(stored))
+    if (u.type === 'prestataire') {
+      const stored = localStorage.getItem('fh_my_services_' + u.id)
+      if (stored) setMyServices(JSON.parse(stored))
+    }
     setReservations(getReservations())
+    setFavoris(getFavoris())
+    const cover = localStorage.getItem('fh_cover_' + u.id)
+    if (cover) setCoverImage(cover)
+    const storedEvents = localStorage.getItem('fh_user_events_' + u.id)
+    if (storedEvents) setMyEvents(JSON.parse(storedEvents))
     const handler = (e) => { if(e.detail) setUser(e.detail) }
+    const dataHandler = () => { setReservations(getReservations()); setFavoris(getFavoris()) }
     window.addEventListener('fh_auth_change', handler)
-    return () => window.removeEventListener('fh_auth_change', handler)
+    window.addEventListener('fh_data_change', dataHandler)
+    return () => {
+      window.removeEventListener('fh_auth_change', handler)
+      window.removeEventListener('fh_data_change', dataHandler)
+    }
   }, [router])
 
   function handleLogout() { logout(); router.push('/') }
@@ -66,6 +83,17 @@ export default function ProviderProfilePage() {
       setSaving(false)
       setEditMode(false)
     }, 400)
+  }
+
+  function handleCoverChange(e) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      setCoverImage(ev.target.result)
+      localStorage.setItem('fh_cover_' + user.id, ev.target.result)
+    }
+    reader.readAsDataURL(file)
   }
 
   function handleAvatarChange(e) {
@@ -147,65 +175,126 @@ export default function ProviderProfilePage() {
   if (!user) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-fuchsia border-t-transparent rounded-full animate-spin"/></div>
 
   const whatsappNum = user.whatsapp || WHATSAPP_NUMBER
-  const TABS = [
+  const isPrestataire = user.type === 'prestataire'
+  const favoriServices = SERVICES.filter(s => favoris.includes(s.id))
+  const likedProviderIds = [...new Set(favoriServices.map(s => s.providerId).filter(Boolean))]
+  const likedProviders = PROVIDERS.filter(p => likedProviderIds.includes(p.id))
+
+  const TABS = isPrestataire ? [
     { id: 'dashboard', label: 'Tableau de bord', icon: Bell },
     { id: 'services', label: 'Mes prestations', icon: Package },
     { id: 'portfolio', label: 'Portfolio', icon: Upload },
     { id: 'reservations', label: 'Reservations', icon: ShoppingBag },
     { id: 'settings', label: 'Mon profil', icon: Settings },
+  ] : [
+    { id: 'favoris', label: 'Favoris', icon: Heart },
+    { id: 'reservations', label: 'Mes réservations', icon: ShoppingBag },
+    { id: 'evenements', label: 'Mes événements', icon: Calendar },
+    { id: 'settings', label: 'Mon profil', icon: Settings },
   ]
+
+  function exitAdminMode() {
+    localStorage.removeItem('fh_session')
+    localStorage.removeItem('fh_admin_impersonate')
+    router.push('/admin')
+  }
 
   return (
     <>
-      <Navbar/>
-      <main className="min-h-screen bg-gray-50 pt-16">
-        {/* Banniere */}
-        <div className="relative bg-gradient-to-br from-petrol to-petrol-dark h-40 md:h-52">
-          <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 80% 50%, #FFC107 0%, transparent 60%)'}}/>
+      {isAdminMode && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-fuchsia text-white flex items-center justify-between px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-semibold">
+            Mode administration — Profil de {user?.prenom} {user?.nom}
+          </span>
+          <button
+            onClick={exitAdminMode}
+            className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full font-semibold transition-all"
+          >
+            Retour à l&apos;administration
+          </button>
         </div>
+      )}
+      <Navbar/>
+      <main className={`min-h-screen bg-gray-50 ${isAdminMode ? 'pt-24' : 'pt-16'}`}>
+        {/* Banniere */}
+        {isPrestataire ? (
+          /* Prestataire : photo de couverture modifiable */
+          <div className="relative h-44 md:h-56 bg-gradient-to-br from-petrol to-petrol-dark overflow-hidden group">
+            {coverImage ? (
+              <img src={coverImage} alt="Couverture" className="absolute inset-0 w-full h-full object-cover"/>
+            ) : (
+              <>
+                <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 80% 50%, #FFC107 0%, transparent 60%)'}}/>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-white/60 text-sm">Ajouter une photo de couverture</p>
+                </div>
+              </>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300"/>
+            <button onClick={() => coverRef.current?.click()}
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/40 hover:bg-black/70 text-white text-xs font-medium px-3 py-1.5 rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100">
+              <Camera size={13}/> Modifier la couverture
+            </button>
+            <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange}/>
+          </div>
+        ) : (
+          /* Cliente : bannière fuchsia simple */
+          <div className="relative h-32 md:h-40 bg-gradient-to-br from-fuchsia to-lavender overflow-hidden">
+            <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 30% 60%, white 0%, transparent 55%)'}}/>
+          </div>
+        )}
 
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header profil */}
-          <div className="relative -mt-16 flex flex-col sm:flex-row items-start sm:items-end gap-4 pb-6 border-b border-gray-200">
-            <div className="relative flex-shrink-0">
-              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-white shadow-xl bg-petrol">
+          <FadeIn direction="up" className="relative -mt-8 bg-white rounded-2xl shadow-sm px-6 pt-5 pb-6 mb-1">
+            {/* Avatar + upload - flottant au-dessus */}
+            <div className="relative flex-shrink-0 -mt-14 mb-3 w-fit">
+              <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-white shadow-xl bg-petrol">
                 {user.image ? (
                   <img src={user.image} alt={user.prenom} className="w-full h-full object-cover"/>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white font-display text-4xl font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-white font-display text-3xl font-bold">
                     {(user.prenom||'P')[0].toUpperCase()}
                   </div>
                 )}
               </div>
               <button onClick={() => fileRef.current?.click()}
-                className="absolute bottom-0 right-0 w-8 h-8 bg-white shadow-md rounded-full flex items-center justify-center hover:bg-fuchsia hover:text-white transition-all">
-                <Camera size={14}/>
+                className="absolute bottom-0 right-0 w-7 h-7 bg-white shadow-md rounded-full flex items-center justify-center hover:bg-fuchsia hover:text-white transition-all">
+                <Camera size={13}/>
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange}/>
             </div>
 
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="font-display text-2xl font-bold text-petrol">{user.prenom} {user.nom}</h1>
-                <span className="bg-gold/20 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">Prestataire</span>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-display text-2xl font-bold text-petrol">{user.prenom} {user.nom}</h1>
+                  {isPrestataire ? (
+                    <span className="bg-gold/20 text-amber-700 text-xs font-bold px-2.5 py-0.5 rounded-full">Prestataire</span>
+                  ) : (
+                    <span className="bg-fuchsia/10 text-fuchsia text-xs font-bold px-2.5 py-0.5 rounded-full">Cliente</span>
+                  )}
+                </div>
+                {isPrestataire && (
+                  <p className="text-gray-500 text-sm capitalize mt-0.5">{user.categorie} · {user.ville || 'Cameroun'}</p>
+                )}
+                {user.description && <p className="text-gray-400 text-sm mt-1 italic">"{user.description}"</p>}
+                {isPrestataire && (
+                  <a href={getWhatsAppUrl(whatsappNum, `Bonjour ${user.prenom} !`)} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 text-sm text-green-600 hover:text-green-700 font-medium">
+                    <WA size={14}/>{whatsappNum}
+                  </a>
+                )}
               </div>
-              <p className="text-gray-500 text-sm capitalize">{user.categorie} · {user.ville || 'Cameroun'}</p>
-              {user.description && <p className="text-gray-400 text-sm mt-1 italic">"{user.description}"</p>}
-              {/* WhatsApp visible */}
-              <a href={getWhatsAppUrl(whatsappNum, `Bonjour ${user.prenom} !`)} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-2 text-xs text-green-600 hover:text-green-700">
-                <WA size={12}/>{whatsappNum}
-              </a>
-            </div>
 
-            <div className="flex gap-2">
-              <Link href="/profile/client" className="btn-outline text-sm">Espace client</Link>
-              <button onClick={handleLogout}
-                className="flex items-center gap-1 text-sm text-red-400 hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-all">
-                <LogOut size={15}/> Deconnexion
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-red-200 text-red-500 font-semibold text-sm hover:bg-red-50 transition-all">
+                  <LogOut size={14}/> Deconnexion
+                </button>
+              </div>
             </div>
-          </div>
+          </FadeIn>
 
           {/* Onglets */}
           <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
@@ -224,34 +313,70 @@ export default function ProviderProfilePage() {
             {/* ─── TABLEAU DE BORD ─── */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Prestations', value: myServices.length, icon: Package },
-                    { label: 'Reservations', value: reservations.length, icon: ShoppingBag },
-                    { label: 'Portfolio', value: myServices.filter(s=>s.mediaType).length, icon: Upload },
-                    { label: 'Vues estimees', value: myServices.length * 47, icon: Eye },
-                  ].map(s => (
-                    <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm text-center">
-                      <s.icon size={20} className="text-fuchsia mx-auto mb-2"/>
-                      <div className="font-display text-2xl font-bold text-petrol">{s.value}</div>
-                      <div className="text-xs text-gray-400">{s.label}</div>
+                {isPrestataire ? (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {[
+                        { label: 'Prestations', value: myServices.length, icon: Package },
+                        { label: 'Reservations', value: reservations.length, icon: ShoppingBag },
+                        { label: 'Portfolio', value: myServices.filter(s=>s.mediaType).length, icon: Upload },
+                        { label: 'Vues estimees', value: myServices.length * 47, icon: Eye },
+                      ].map(s => (
+                        <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm text-center">
+                          <s.icon size={20} className="text-fuchsia mx-auto mb-2"/>
+                          <div className="font-display text-2xl font-bold text-petrol">{s.value}</div>
+                          <div className="text-xs text-gray-400">{s.label}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <WA size={20}/>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-green-800 text-sm">Votre numero WhatsApp</p>
-                    <p className="text-green-700 text-sm">{whatsappNum}</p>
-                    <p className="text-green-600 text-xs mt-0.5">Les clients vous contacteront sur ce numero</p>
-                  </div>
-                  <a href={getWhatsAppUrl(whatsappNum)} target="_blank" rel="noopener noreferrer"
-                    className="ml-auto bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-4 py-2 rounded-full transition-all flex-shrink-0">
-                    Ouvrir
-                  </a>
-                </div>
+                    <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-center gap-4">
+                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <WA size={20}/>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-green-800 text-sm">Votre numero WhatsApp</p>
+                        <p className="text-green-700 text-sm">{whatsappNum}</p>
+                        <p className="text-green-600 text-xs mt-0.5">Les clients vous contacteront sur ce numero</p>
+                      </div>
+                      <a href={getWhatsAppUrl(whatsappNum)} target="_blank" rel="noopener noreferrer"
+                        className="ml-auto bg-green-500 hover:bg-green-600 text-white text-xs font-medium px-4 py-2 rounded-full transition-all flex-shrink-0">
+                        Ouvrir
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { label: 'Reservations', value: reservations.length, icon: ShoppingBag },
+                        { label: 'Evenements rejoints', value: reservations.filter(r => r.eventId).length, icon: Bell },
+                        { label: 'Favoris', value: favoris.length, icon: Heart },
+                      ].map(s => (
+                        <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm text-center">
+                          <s.icon size={20} className="text-fuchsia mx-auto mb-2"/>
+                          <div className="font-display text-2xl font-bold text-petrol">{s.value}</div>
+                          <div className="text-xs text-gray-400">{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="bg-white rounded-2xl p-6 shadow-sm">
+                      <h3 className="font-display font-bold text-petrol mb-4">Activite recente</h3>
+                      {reservations.length === 0 ? (
+                        <p className="text-gray-400 text-sm">Aucune activite pour l'instant. <a href="/services" className="text-fuchsia hover:underline">Decouvrir les services</a></p>
+                      ) : (
+                        <div className="space-y-3">
+                          {reservations.slice(0, 3).map(r => (
+                            <div key={r.id} className="flex items-center gap-3 text-sm">
+                              <div className="w-2 h-2 rounded-full bg-fuchsia flex-shrink-0"/>
+                              <span className="text-gray-600">Reservation confirmee</span>
+                              <span className="text-gray-400 text-xs ml-auto">{new Date(r.date).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -438,6 +563,82 @@ export default function ProviderProfilePage() {
                         <span className={`text-xs font-medium px-3 py-1 rounded-full ${STATUS_STYLES[r.statut]||STATUS_STYLES.pending}`}>
                           {STATUS_LABELS[r.statut]||'En attente'}
                         </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── FAVORIS (clients) ─── */}
+            {activeTab === 'favoris' && (
+              <div>
+                {favoriServices.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
+                    <Heart size={40} className="text-gray-200 mx-auto mb-3"/>
+                    <p className="font-display text-lg text-gray-400">Pas encore de favoris</p>
+                    <p className="text-sm text-gray-400 mt-1 mb-5">Likez des services pour les retrouver ici</p>
+                    <a href="/services" className="btn-primary text-sm inline-block">Consulter les services</a>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {favoriServices.map(s => {
+                      const img = s.src || s.image || IMAGES[s.id % IMAGES.length]
+                      return (
+                        <a key={s.id} href={`/services/${s.id}`}
+                          className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all group">
+                          <div className="relative overflow-hidden" style={{paddingBottom:'65%'}}>
+                            <img src={img} alt={s.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e=>{e.target.src='/images/img1.jpg'}}/>
+                          </div>
+                          <div className="p-3">
+                            <p className="font-display font-semibold text-xs text-petrol line-clamp-2">{s.title}</p>
+                            <p className="text-fuchsia font-bold text-sm mt-1">{(s.price||0).toLocaleString('fr-FR')} FCFA</p>
+                          </div>
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ─── MES ÉVÉNEMENTS CRÉÉS (clients) ─── */}
+            {activeTab === 'evenements' && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-display font-bold text-petrol">Mes événements ({myEvents.length})</h3>
+                  <a href="/events" className="flex items-center gap-2 btn-primary text-sm">
+                    <Calendar size={15}/> Créer un événement
+                  </a>
+                </div>
+                {myEvents.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-12 shadow-sm text-center">
+                    <Calendar size={40} className="text-gray-200 mx-auto mb-3"/>
+                    <p className="font-display text-lg text-gray-400">Aucun événement créé</p>
+                    <p className="text-sm text-gray-400 mt-1 mb-4">Organisez et partagez vos événements avec la communauté</p>
+                    <a href="/events" className="btn-primary text-sm inline-block">Créer un événement</a>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {myEvents.map(e => (
+                      <div key={e.id} className="bg-white rounded-2xl p-5 shadow-sm flex items-center gap-4">
+                        <div className="w-12 h-12 bg-fuchsia/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Calendar size={20} className="text-fuchsia"/>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display font-semibold text-petrol text-sm truncate">{e.title}</p>
+                          <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-2">
+                            <span>{new Date(e.date).toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'})}</span>
+                            {e.time && <span>· {e.time}</span>}
+                          </p>
+                          <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <MapPin size={10}/>{e.location}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-xs font-semibold text-fuchsia bg-fuchsia/10 px-2.5 py-1 rounded-full">{e.type}</span>
+                          <p className="text-xs text-gray-400 mt-1">{e.participants || 0} / {e.maxParticipants} places</p>
+                        </div>
                       </div>
                     ))}
                   </div>

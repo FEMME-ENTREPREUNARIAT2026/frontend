@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { Eye, ChevronLeft, ChevronRight, Calendar, MapPin, Users, ArrowRight } from 'lucide-react'
 import { EVENTS } from '@/data/mockData'
+import FadeIn from '@/components/ui/FadeIn'
 
 // Calcule le ratio popularite
 function getRatio(event) {
@@ -78,23 +79,21 @@ export default function EventsCarousel() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Titre de section */}
-        <div className="flex items-end justify-between mb-10">
+        <FadeIn direction="up" className="flex flex-wrap items-end justify-between gap-4 mb-10">
           <div>
-            <p className="text-fuchsia text-xs font-bold tracking-widest uppercase mb-2">
-              A ne pas manquer
-            </p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-petrol">
-              Evenements Populaires
+            <span className="section-label">À ne pas manquer</span>
+            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-semibold text-petrol leading-tight">
+              Événements Populaires
             </h2>
-            <p className="text-gray-400 mt-1">
-              Selectionnes par popularite et date proche
+            <p className="text-gray-400 mt-2">
+              Sélectionnés par popularité et date proche
             </p>
           </div>
           <Link href="/events"
-            className="hidden md:flex items-center gap-2 text-sm font-medium text-fuchsia hover:text-fuchsia-dark transition-colors">
-            Voir tout <ArrowRight size={16} />
+            className="text-xs md:text-sm font-semibold text-fuchsia border border-fuchsia px-3 py-1.5 md:px-5 md:py-2 rounded-full hover:bg-fuchsia hover:text-white transition-all">
+            Voir tout
           </Link>
-        </div>
+        </FadeIn>
 
         {/* Hero du carrousel : grande carte + 3 vignettes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">

@@ -276,16 +276,16 @@ export const SERVICES = [
 ]
 
 export const PROVIDERS = [
-  { id: 1, name: 'Amina Ngo Bassa', category: 'coiffure', rating: 4.9, reviews: 128, city: 'Yaounde', image: '/images/img3.jpg', description: 'Specialiste coiffure afro et tresses depuis 10 ans.', prestations: 12, clients: 340 },
-  { id: 2, name: 'Belle Epoque Traiteur', category: 'restauration', rating: 4.8, reviews: 95, city: 'Douala', image: '/images/img6.jpg', description: 'Traiteur evenementiel haut de gamme.', prestations: 8, clients: 210 },
-  { id: 3, name: 'Deco Dreams', category: 'decoration', rating: 4.8, reviews: 87, city: 'Yaounde', image: '/images/img5.jpg', description: 'Decoration florale et thematique.', prestations: 15, clients: 195 },
-  { id: 4, name: 'Royal Nails Studio', category: 'manucure', rating: 4.7, reviews: 203, city: 'Douala', image: '/images/img8.jpg', description: 'Studio de manucure et pedicure premium.', prestations: 20, clients: 520 },
-  { id: 5, name: 'MC Prestige Events', category: 'mc', rating: 4.9, reviews: 67, city: 'Yaounde', image: '/images/img1.jpg', description: 'Animation de vos evenements avec classe.', prestations: 5, clients: 89 },
-  { id: 6, name: 'CineVision Pro', category: 'cinematographie', rating: 4.8, reviews: 112, city: 'Bafoussam', image: '/images/img7.jpg', description: 'Capturer vos moments les plus precieux.', prestations: 10, clients: 178 },
-  { id: 7, name: 'Glamour Makeup Atelier', category: 'makeup', rating: 4.7, reviews: 156, city: 'Douala', image: '/images/img2.jpg', description: 'Maquillage longue tenue pour mariees.', prestations: 18, clients: 410 },
-  { id: 8, name: 'Sound Elegance', category: 'sonorisation', rating: 4.6, reviews: 74, city: 'Yaounde', image: '/images/img4.jpg', description: 'Location de materiel sonore et DJ.', prestations: 7, clients: 130 },
-  { id: 9, name: 'Protocol VIP', category: 'hotesses', rating: 4.8, reviews: 58, city: 'Douala', image: '/images/img2.jpg', description: 'Hotesses professionnelles pour conferences.', prestations: 6, clients: 75 },
-  { id: 10, name: 'Tresses et Merveilles', category: 'coiffure', rating: 4.6, reviews: 189, city: 'Bafoussam', image: '/images/img3.jpg', description: 'Tresses africaines, locs, tissages.', prestations: 14, clients: 290 },
+  { id: 1, name: 'Amina Ngo Bassa', category: 'coiffure', rating: 4.9, reviews: 128, city: 'Yaounde', image: '/images/img3.jpg', description: 'Specialiste coiffure afro et tresses depuis 10 ans.', prestations: 12, clients: 340, whatsapp: '+237690112233', telephone: '+237690112233' },
+  { id: 2, name: 'Belle Epoque Traiteur', category: 'restauration', rating: 4.8, reviews: 95, city: 'Douala', image: '/images/img6.jpg', description: 'Traiteur evenementiel haut de gamme.', prestations: 8, clients: 210, whatsapp: '+237691223344', telephone: '+237691223344' },
+  { id: 3, name: 'Deco Dreams', category: 'decoration', rating: 4.8, reviews: 87, city: 'Yaounde', image: '/images/img5.jpg', description: 'Decoration florale et thematique.', prestations: 15, clients: 195, whatsapp: '+237692334455', telephone: '+237692334455' },
+  { id: 4, name: 'Royal Nails Studio', category: 'manucure', rating: 4.7, reviews: 203, city: 'Douala', image: '/images/img8.jpg', description: 'Studio de manucure et pedicure premium.', prestations: 20, clients: 520, whatsapp: '+237693445566', telephone: '+237693445566' },
+  { id: 5, name: 'MC Prestige Events', category: 'mc', rating: 4.9, reviews: 67, city: 'Yaounde', image: '/images/img1.jpg', description: 'Animation de vos evenements avec classe.', prestations: 5, clients: 89, whatsapp: '+237694556677', telephone: '+237694556677' },
+  { id: 6, name: 'CineVision Pro', category: 'cinematographie', rating: 4.8, reviews: 112, city: 'Bafoussam', image: '/images/img7.jpg', description: 'Capturer vos moments les plus precieux.', prestations: 10, clients: 178, whatsapp: '+237695667788', telephone: '+237695667788' },
+  { id: 7, name: 'Glamour Makeup Atelier', category: 'makeup', rating: 4.7, reviews: 156, city: 'Douala', image: '/images/img2.jpg', description: 'Maquillage longue tenue pour mariees.', prestations: 18, clients: 410, whatsapp: '+237696778899', telephone: '+237696778899' },
+  { id: 8, name: 'Sound Elegance', category: 'sonorisation', rating: 4.6, reviews: 74, city: 'Yaounde', image: '/images/img4.jpg', description: 'Location de materiel sonore et DJ.', prestations: 7, clients: 130, whatsapp: '+237697889900', telephone: '+237697889900' },
+  { id: 9, name: 'Protocol VIP', category: 'hotesses', rating: 4.8, reviews: 58, city: 'Douala', image: '/images/img2.jpg', description: 'Hotesses professionnelles pour conferences.', prestations: 6, clients: 75, whatsapp: '+237698990011', telephone: '+237698990011' },
+  { id: 10, name: 'Tresses et Merveilles', category: 'coiffure', rating: 4.6, reviews: 189, city: 'Bafoussam', image: '/images/img3.jpg', description: 'Tresses africaines, locs, tissages.', prestations: 14, clients: 290, whatsapp: '+237699001122', telephone: '+237699001122' },
 ]
 
 export const HERO_SLIDES = [

@@ -13,6 +13,8 @@ import {
   Heart, Eye, MapPin, Clock, ChevronLeft, ChevronRight, Play, X, ZoomIn,
   Calendar, Clock3, MessageCircle, Check
 } from 'lucide-react'
+import FadeIn from '@/components/ui/FadeIn'
+import { StaggerContainer, StaggerItem } from '@/components/ui/StaggerChildren'
 
 // Icone WhatsApp
 function WA({ size = 18 }) {
@@ -70,6 +72,7 @@ function ReservationModal({ service, provider, onClose }) {
   const user = getCurrentUser()
   const [date, setDate] = useState('')
   const [heure, setHeure] = useState('')
+  const [description, setDescription] = useState('')
   const [sent, setSent] = useState(false)
 
   // Date minimum = aujourd'hui
@@ -86,7 +89,8 @@ function ReservationModal({ service, provider, onClose }) {
     const providerName = provider?.name || service.providerName || 'la prestataire'
 
     // Message WhatsApp formate
-    const message = `Bonjour ${providerName},\n\nJe souhaite réserver la prestation suivante :\n\nPrestation : ${service.title}\nClient : ${clientName}\nDate : ${new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\nHeure : ${heure}\n\nMerci de me confirmer la disponibilité.`
+    const descPart = description ? `\nMessage : ${description}` : ''
+    const message = `Bonjour ${providerName},\n\nJe souhaite réserver la prestation suivante :\n\nPrestation : ${service.title}\nClient : ${clientName}\nDate : ${new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\nHeure : ${heure}${descPart}\n\nMerci de me confirmer la disponibilité.`
 
     const waUrl = getWhatsAppUrl(whatsappNum, message)
     window.open(waUrl, '_blank')
@@ -96,9 +100,10 @@ function ReservationModal({ service, provider, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6"
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
+      <div className="p-6">
         {/* En-tete */}
         <div className="flex items-start justify-between mb-5">
           <div>
@@ -150,54 +155,49 @@ function ReservationModal({ service, provider, onClose }) {
               </div>
             )}
 
-            {/* Date */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Date souhaitée *</label>
+                <input
+                  type="date" required min={today} value={date}
+                  onChange={e => setDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia transition-all"
+                />
+              </div>
+
+              {/* Heure */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Heure souhaitée *</label>
+                <select required value={heure} onChange={e => setHeure(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia transition-all">
+                  <option value="">Choisir...</option>
+                  {Array.from({ length: 28 }, (_, i) => {
+                    const h = Math.floor(i / 2) + 7
+                    const m = i % 2 === 0 ? '00' : '30'
+                    return `${String(h).padStart(2, '0')}:${m}`
+                  }).filter(t => parseInt(t) >= 7 && parseInt(t) <= 20).map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Description */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Calendar size={15} className="text-fuchsia"/>
-                Date souhaitée *
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Message <span className="text-gray-400 font-normal">(optionnel)</span>
               </label>
-              <input
-                type="date"
-                required
-                min={today}
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia transition-all"
+              <textarea
+                value={description} onChange={e => setDescription(e.target.value)}
+                rows={3} placeholder="Précisez vos attentes, le type d'événement, vos préférences..."
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia transition-all resize-none"
               />
             </div>
 
-            {/* Heure */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-                <Clock3 size={15} className="text-fuchsia"/>
-                Heure souhaitée *
-              </label>
-              <select
-                required
-                value={heure}
-                onChange={e => setHeure(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia/30 focus:border-fuchsia transition-all"
-              >
-                <option value="">Choisir une heure...</option>
-                {Array.from({ length: 28 }, (_, i) => {
-                  const h = Math.floor(i / 2) + 7 // 7h à 20h30
-                  const m = i % 2 === 0 ? '00' : '30'
-                  return `${String(h).padStart(2, '0')}:${m}`
-                }).filter(t => {
-                  const h = parseInt(t)
-                  return h >= 7 && h <= 20
-                }).map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Bouton envoi */}
-            <button
-              type="submit"
-              disabled={!date || !heure}
-              className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-full text-sm transition-all shadow-md shadow-green-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={!date || !heure}
+              className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-full text-sm transition-all shadow-md shadow-green-500/20 disabled:opacity-40 disabled:cursor-not-allowed">
               <WA size={18}/>
               Envoyer la demande via WhatsApp
             </button>
@@ -206,6 +206,7 @@ function ReservationModal({ service, provider, onClose }) {
             </p>
           </form>
         )}
+      </div>
       </div>
     </div>
   )
@@ -291,6 +292,7 @@ export default function ServiceDetailPage() {
             <span className="text-gray-600 line-clamp-1">{service.title}</span>
           </nav>
 
+          <FadeIn direction="up">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
             {/* Galerie */}
@@ -405,10 +407,11 @@ export default function ServiceDetailPage() {
               </div>
             </div>
           </div>
+          </FadeIn>
 
           {/* Prestations similaires */}
           {similar.length > 0 && (
-            <div className="mt-16">
+            <FadeIn direction="up" delay={0.1} className="mt-16">
               <h2 className="font-display text-2xl font-bold text-petrol mb-6">Prestations Similaires</h2>
               <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
                 {similar.map(s => (
@@ -417,7 +420,7 @@ export default function ServiceDetailPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </FadeIn>
           )}
         </div>
       </main>
